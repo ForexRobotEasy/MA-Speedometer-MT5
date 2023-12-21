@@ -1,0 +1,73 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                      MA Speedometer MT5|
+//|                                       Copyright 2021, Forex Robot Easy Team|
+//|                                              https://www.forexroboteasy.com|
+//+------------------------------------------------------------------+
+#property copyright 'Copyright 2021, Forex Robot Easy Team'
+#property link      'https://www.forexroboteasy.com'
+#property version   '1.00'
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    //--- indicator buffers mapping
+    SetIndexStyle(0, DRAW_LINE);
+    SetIndexBuffer(0, ExtLineBuffer);
+
+    //--- set up indicator parameters
+    SetIndexLabel(0, 'MA Speedometer');
+
+    //--- initialization done
+    return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+    //--- check for bars count
+    if(rates_total < 15)
+        return(0);
+
+    //--- calculate MA Speedometer
+    for(int i = prev_calculated; i < rates_total; i++)
+    {
+        //--- calculate moving average
+        double ma15 = iMA(NULL, 0, 15, 0, MODE_SMA, PRICE_CLOSE, i);
+        double maLastClosed = iMA(NULL, 0, 1, 0, MODE_SMA, PRICE_CLOSE, i);
+
+        //--- calculate tilt angle
+        double angle = MathArctan((maLastClosed - ma15) / 15) * (180 / MathPi);
+
+        //--- draw line
+        ExtLineBuffer[i] = angle;
+
+        //--- check buying/selling areas
+        if(angle > 30)
+            Print('Buying area');
+        else if(angle < -30)
+            Print('Selling area');
+
+        //--- check strong purchases/sales
+        if(angle > 60)
+            Print('Strong purchases');
+        else if(angle < -60)
+            Print('Strong sales');
+    }
+
+    //--- return value of prev_calculated for next call
+    return(rates_total);
+}
